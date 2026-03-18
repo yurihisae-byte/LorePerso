@@ -447,7 +447,20 @@ const themes = [
   { r:200, g:40,  b:40,  name:'Rouge'  },   // 3
   { r:20,  g:180, b:180, name:'Cyan'   },   // 4
   { r:200, g:150, b:20,  name:'Or'     },   // 5
+
 ];
+
+function getEffectType(){
+  switch(currentTheme){
+    case 0: return "feather"; // violet
+    case 1: return "wind";    // vert
+    case 2: return "rain";    // bleu
+    case 3: return "fire";    // rouge
+    case 4: return "fog";     // cyan
+    case 5: return "energy";  // or
+    default: return "energy";
+  }
+}
 
 let currentTheme = 0;
 
@@ -469,16 +482,142 @@ function rand(a,b){ return Math.random()*(b-a)+a; }
 
 class Particle{
   constructor(){ this.reset(true); }
+
   reset(init){
-    this.x=rand(0,W); this.y=init?rand(0,H):H+5;
-    this.s=rand(0.5,2.2); this.sy=-(rand(0.1,0.45)); this.sx=rand(-0.08,0.08);
-    this.a=rand(0.05,0.18); this.life=1; this.decay=rand(0.0004,0.001);
+    this.x = rand(0,W);
+    this.y = init ? rand(0,H) : rand(0,H);
+
+    this.s = rand(1,2.5);
+    this.life = 1;
+    this.decay = rand(0.003,0.008);
+
+    this.vx = rand(-0.5,0.5);
+    this.vy = rand(-0.5,0.5);
   }
-  update(){ this.x+=this.sx; this.y+=this.sy; this.life-=this.decay; if(this.y<-5||this.life<=0)this.reset(false); }
+
+  update(){
+    const mode = getEffectType();
+
+    // 🌧️ PLUIE (corrigé)
+    if(mode === "rain"){
+      this.y += 8;
+      if(this.y > H){
+        this.y = -10;
+        this.x = rand(0,W);
+      }
+    }
+
+    // 🌪️ VENT (corrigé)
+    else if(mode === "wind"){
+      this.x += 4;
+      if(this.x > W){
+        this.x = -10;
+        this.y = rand(0,H);
+      }
+    }
+
+    // 🔥 FLAMMES (corrigé)
+    else if(mode === "fire"){
+      this.y -= 1.5;
+      this.x += rand(-0.3,0.3);
+
+      if(this.y < H*0.6){
+        this.y = H;
+        this.x = rand(0,W);
+      }
+    }
+
+    // 🪶 / ✨ / 🌫️ (normal)
+    else{
+      this.x += this.vx;
+      this.y += this.vy;
+    }
+
+    this.life -= this.decay;
+
+    if(this.life <= 0){
+      this.reset(false);
+    }
+  }
+
   draw(){
-    const {r,g,b}=themes[currentTheme];
-    ctx.beginPath(); ctx.arc(this.x,this.y,this.s,0,Math.PI*2);
-    ctx.fillStyle=`rgba(${r},${g},${b},${this.a*this.life})`; ctx.fill();
+    const {r,g,b} = themes[currentTheme];
+    const mode = getEffectType();
+
+    ctx.save();
+    ctx.translate(this.x,this.y);
+
+    // 🪶 PLUMES (fix rotation douce)
+    if(mode === "feather"){
+      ctx.rotate(this.x * 0.002);
+
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.quadraticCurveTo(5,-8,0,-16);
+      ctx.quadraticCurveTo(-5,-8,0,0);
+
+      ctx.fillStyle = `rgba(${r},${g},${b},${this.life})`;
+      ctx.fill();
+    }
+
+    // 🔥 FLAMMES (plus propre)
+    else if(mode === "fire"){
+      const gradient = ctx.createRadialGradient(0,0,0,0,0,this.s*5);
+      gradient.addColorStop(0, `rgba(${r+80},${g},${b},${this.life})`);
+      gradient.addColorStop(1, `rgba(${r},${g},${b},0)`);
+
+      ctx.beginPath();
+      ctx.arc(0,0,this.s*2.5,0,Math.PI*2);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+    }
+
+    // 🌧️ PLUIE (fix orientation)
+    else if(mode === "rain"){
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.lineTo(0,12);
+
+      ctx.strokeStyle = `rgba(${r},${g},${b},${this.life})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // 🌪️ VENT (plus fluide)
+    else if(mode === "wind"){
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.lineTo(12,0);
+
+      ctx.strokeStyle = `rgba(${r},${g},${b},${this.life})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // ✨ ÉNERGIE
+    else if(mode === "energy"){
+      ctx.beginPath();
+      ctx.arc(0,0,this.s,0,Math.PI*2);
+
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = `rgb(${r},${g},${b})`;
+
+      ctx.fillStyle = `rgba(${r},${g},${b},${this.life})`;
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+    }
+
+    // 🌫️ BRUME (plus légère)
+    else if(mode === "fog"){
+      ctx.beginPath();
+      ctx.arc(0,0,this.s*3,0,Math.PI*2);
+
+      ctx.fillStyle = `rgba(${r},${g},${b},${this.life*0.15})`;
+      ctx.fill();
+    }
+
+    ctx.restore();
   }
 }
 
