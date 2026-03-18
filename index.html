@@ -20,6 +20,82 @@ body { font-family:'Nunito',sans-serif; min-height:100vh; color:#e8eaf6; overflo
 .header-name .clan { color:var(--accent,#a0a0ff); }
 .header-quote { font-size:0.9rem; color:rgba(220,220,255,0.4); font-style:italic; }
 
+/* MUSIC SELECT */
+.music-select{
+  font-family:'Cinzel',serif;
+  font-size:0.7rem;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  padding:0.6em 1em;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.05);
+  color:#fff;
+  backdrop-filter:blur(10px);
+  cursor:pointer;
+}
+
+.music-select option{
+  background:#111;
+}
+
+/* MUSIC BUTTON */
+.music-btn{
+  font-family:'Cinzel',serif;
+  font-size:0.75rem;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  padding:0.8em 1.6em;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.05);
+  color:#fff;
+  cursor:pointer;
+  backdrop-filter:blur(10px);
+  transition:all 0.3s ease;
+}
+
+.music-btn:disabled{
+  opacity:0.4;
+  cursor:not-allowed;
+}
+
+.music-btn:hover{
+  background:rgba(255,255,255,0.1);
+  transform:translateY(-2px);
+}
+
+.music-btn.playing{
+  background:rgba(255,255,255,0.15);
+  color:var(--accent,#a0a0ff);
+  box-shadow:0 0 15px rgba(255,255,255,0.1);
+}
+/* MUSIC BUTTON */
+.music-btn{
+  font-family:'Cinzel',serif;
+  font-size:0.75rem;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  padding:0.8em 1.6em;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.05);
+  color:#fff;
+  cursor:pointer;
+  backdrop-filter:blur(10px);
+  transition:all 0.3s ease;
+}
+
+.music-btn:hover{
+  background:rgba(255,255,255,0.1);
+  transform:translateY(-2px);
+}
+
+.music-btn.playing{
+  background:rgba(255,255,255,0.15);
+  color:var(--accent,#a0a0ff);
+  box-shadow:0 0 15px rgba(255,255,255,0.1);
+}
 /* TABS */
 .tabs { display:flex; flex-wrap:wrap; gap:0.4rem; background:rgba(0,0,0,0.25); border-radius:12px; padding:0.5rem; margin-bottom:2rem; backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.07); }
 .tab-btn { flex:1; min-width:90px; padding:0.6rem 0.8rem; background:transparent; border:none; border-radius:8px; font-family:'Nunito',sans-serif; font-size:0.82rem; font-weight:700; color:rgba(220,220,255,0.45); cursor:pointer; transition:all 0.3s; white-space:nowrap; text-align:center; }
@@ -281,8 +357,8 @@ body { font-family:'Nunito',sans-serif; min-height:100vh; color:#e8eaf6; overflo
       <div class="obj-item">
         <div class="obj-num">04</div>
         <div>
-          <span class="obj-title">Long terme — [Titre]</span>
-          <p class="obj-desc">[Description de ton deuxième objectif long terme.]</p>
+          <span class="obj-title">Long terme </span>
+          <p class="obj-desc">maitriser le Mugen no Genkaku a 100% sans faille</p>
         </div>
       </div>
 
@@ -326,6 +402,30 @@ body { font-family:'Nunito',sans-serif; min-height:100vh; color:#e8eaf6; overflo
   <div class="color-dot" style="background:#5a1a1a" onclick="setTheme(3)" title="Rouge"></div>
   <div class="color-dot" style="background:#1a4a4a" onclick="setTheme(4)" title="Cyan"></div>
   <div class="color-dot" style="background:#5a3a10" onclick="setTheme(5)" title="Or"></div>
+</div>
+
+<div id="volume-container" style="position:fixed;left:2vw;top:18vh;z-index:10;display:flex;flex-direction:column;align-items:center;">
+  <input type="range" id="volume-bar" min="0" max="100" value="50" style="height:180px;width:18px;writing-mode:bt-lr;-webkit-appearance:slider-vertical;appearance:slider-vertical;background:rgba(80,80,200,0.15);">
+  <span id="volume-label" style="color:#a0a0ff;font-size:0.95em;margin-top:0.5em;">Volume : 50%</span>
+</div>
+
+<div style="text-align:center;margin-top:1.5rem;display:flex;flex-direction:column;align-items:center;gap:0.7rem;">
+
+  <audio id="musique" loop></audio>
+
+  <!-- SELECT MUSIQUE -->
+  <select id="music-select" class="music-select">
+    <option value="">Choisit une musique</option>
+    <option value="[JJK] Death Penalty.mp3">Death Penalty</option>
+    <option value="[YN] Dream lantern.mp3">Dream lantern</option>
+    <option value="[IE] Holy Ground.mp3">Holy Ground</option>
+  </select>
+
+  <!-- BOUTON -->
+  <button id="play-music" class="music-btn" disabled>
+    ▶ Lancer la musique
+  </button>
+
 </div>
 
 <script>
@@ -419,6 +519,51 @@ function animate(){
 }
 animate();
 setTheme(0);
+// ═══ MUSIQUE AVEC CHOIX ═══
+const audio = document.getElementById("musique");
+const btn = document.getElementById("play-music");
+const select = document.getElementById("music-select");
+const volumeBar = document.getElementById("volume-bar");
+const volumeLabel = document.getElementById("volume-label");
+
+let isPlaying = false;
+
+// sélection musique
+select.addEventListener("change", () => {
+  audio.src = select.value;
+  btn.disabled = !select.value;
+
+  if(isPlaying){
+    audio.play();
+  }
+});
+
+// bouton play / pause
+btn.addEventListener("click", () => {
+  if(!audio.src) return;
+
+  if(!isPlaying){
+    audio.play();
+    btn.textContent = "❚❚ Pause";
+    btn.classList.add("playing");
+  }else{
+    audio.pause();
+    btn.textContent = "▶ Lancer la musique";
+    btn.classList.remove("playing");
+  }
+
+  isPlaying = !isPlaying;
+});
+
+// volume
+volumeBar.addEventListener("input", () => {
+  const vol = volumeBar.value / 100;
+  audio.volume = vol;
+  volumeLabel.textContent = "Volume : " + volumeBar.value + "%";
+});
+
+// volume initial
+audio.volume = 0.5;
 </script>
 </body>
 </html>
